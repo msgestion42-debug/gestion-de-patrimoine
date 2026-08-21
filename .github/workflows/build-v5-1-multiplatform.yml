@@ -3,6 +3,8 @@ name: Build V5.1 Android and Windows
 on:
   push:
     branches: [v5.1-multiplatform]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 jobs:
