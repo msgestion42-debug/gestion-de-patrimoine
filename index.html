@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#165d4a">
+  <meta name="description" content="Gestion simple de propriétés, parcelles, logements et locataires.">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="styles.css">
+  <title>Mon Patrimoine</title>
+</head>
+<body>
+<header class="topbar">
+  <div><span class="eyebrow">GESTION IMMOBILIÈRE & FONCIÈRE</span><h1>Mon Patrimoine</h1></div>
+  <button id="installBtn" class="secondary hidden">Installer</button>
+</header>
+<nav class="tabs" aria-label="Navigation">
+  <button class="tab active" data-view="dashboard">Vue d’ensemble</button>
+  <button class="tab" data-view="properties">Biens</button>
+  <button class="tab" data-view="tenants">Locataires</button>
+  <button class="tab" data-view="settings">Sociétés</button>
+</nav>
+<main>
+  <section class="account-bar card">
+    <label for="accountSelect">Société propriétaire</label>
+    <div class="inline"><select id="accountSelect"></select><button id="addAccountBtn" class="icon-btn" title="Ajouter une société">+</button></div>
+  </section>
+
+  <section id="dashboard" class="view active">
+    <div class="stats">
+      <article class="stat card"><span>Biens</span><strong id="statProperties">0</strong></article>
+      <article class="stat card"><span>Logements</span><strong id="statUnits">0</strong></article>
+      <article class="stat card"><span>Locataires</span><strong id="statTenants">0</strong></article>
+      <article class="stat card"><span>Loyers mensuels</span><strong id="statRent">0 €</strong></article>
+    </div>
+    <article class="card">
+      <div class="section-title"><div><span class="eyebrow">À SURVEILLER</span><h2>Échéances</h2></div></div>
+      <div id="alerts" class="empty">Aucune échéance enregistrée.</div>
+    </article>
+  </section>
+
+  <section id="properties" class="view">
+    <div class="section-title"><div><span class="eyebrow">CADASTRE & BÂTIMENTS</span><h2>Mes biens</h2></div><button id="addPropertyBtn">+ Ajouter</button></div>
+    <div id="propertyList" class="grid-list"></div>
+  </section>
+
+  <section id="tenants" class="view">
+    <div class="section-title"><div><span class="eyebrow">OCCUPATION</span><h2>Locataires</h2></div><button id="addTenantBtn">+ Ajouter</button></div>
+    <div id="tenantList" class="grid-list"></div>
+  </section>
+
+  <section id="settings" class="view">
+    <div class="section-title"><div><span class="eyebrow">PROPRIÉTAIRES</span><h2>Sociétés et comptes</h2></div><button id="addAccountBtn2">+ Ajouter</button></div>
+    <div id="accountList" class="grid-list"></div>
+  </section>
+</main>
+
+<dialog id="accountDialog">
+<form method="dialog" id="accountForm">
+  <div class="dialog-head"><h2>Nouvelle société</h2><button value="cancel" class="close">×</button></div>
+  <label>Nom<input name="name" required placeholder="Ex. SCI des Sapins"></label>
+  <label>SIREN (facultatif)<input name="siren" inputmode="numeric"></label>
+  <div class="actions"><button value="cancel" class="secondary">Annuler</button><button value="default">Enregistrer</button></div>
+</form>
+</dialog>
+
+<dialog id="propertyDialog">
+<form method="dialog" id="propertyForm">
+  <div class="dialog-head"><h2>Ajouter un bien</h2><button value="cancel" class="close">×</button></div>
+  <label>Nom du bien<input name="name" required placeholder="Ex. Bois de la Garde"></label>
+  <label>Type<select name="type"><option>Forêt</option><option>Pré</option><option>Habitation</option><option>Immeuble</option><option>Terrain</option></select></label>
+  <div class="two"><label>Commune<input name="city" required></label><label>Code postal<input name="zip" inputmode="numeric"></label></div>
+  <div class="two"><label>Section cadastrale<input name="section" placeholder="AB"></label><label>N° parcelle<input name="parcel" placeholder="0123"></label></div>
+  <div class="two"><label>Surface (m²)<input name="area" type="number" min="0"></label><label>Nombre de logements<input name="units" type="number" min="0" value="0"></label></div>
+  <label>Notes<textarea name="notes" rows="3"></textarea></label>
+  <div class="actions"><button value="cancel" class="secondary">Annuler</button><button value="default">Enregistrer</button></div>
+</form>
+</dialog>
+
+<dialog id="tenantDialog">
+<form method="dialog" id="tenantForm">
+  <div class="dialog-head"><h2>Ajouter un locataire</h2><button value="cancel" class="close">×</button></div>
+  <label>Nom complet<input name="name" required></label>
+  <label>Bien<select name="propertyId" id="tenantProperty" required></select></label>
+  <label>Logement / lot<input name="unit" placeholder="Ex. Appartement 2"></label>
+  <div class="two"><label>Loyer mensuel (€)<input name="rent" type="number" min="0" step="0.01"></label><label>Début du bail<input name="leaseStart" type="date"></label></div>
+  <div class="two"><label>Téléphone<input name="phone" type="tel"></label><label>E-mail<input name="email" type="email"></label></div>
+  <div class="actions"><button value="cancel" class="secondary">Annuler</button><button value="default">Enregistrer</button></div>
+</form>
+</dialog>
+
+<script src="app.js"></script>
+</body>
+</html>
