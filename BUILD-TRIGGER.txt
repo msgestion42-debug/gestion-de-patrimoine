@@ -1,1 +1,1 @@
-Final V5 feature set prepared for APK build.
+V5.3 Cloud final build triggered after Supabase setup on 2026-08-21.
