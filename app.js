@@ -1,42 +1,39 @@
-const KEY="patrimoine-v1";
-const initial={accounts:[{id:crypto.randomUUID(),name:"Mon patrimoine",siren:""}],activeAccountId:null,properties:[],tenants:[]};
-let state=load();let installPrompt;
-function load(){try{const s=JSON.parse(localStorage.getItem(KEY));if(s?.accounts?.length){s.activeAccountId||=s.accounts[0].id;return s}}catch{}initial.activeAccountId=initial.accounts[0].id;return initial}
-function save(){localStorage.setItem(KEY,JSON.stringify(state));render()}
+const KEY='patrimoine-v5';
+const empty={accounts:[{id:crypto.randomUUID(),name:'Mon patrimoine',siren:''}],activeAccountId:null,properties:[],tenants:[]};
+let state=load(); empty.activeAccountId=empty.accounts[0].id;
+let map,parcelLayer,currentParcel=null;
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
-function current(){return state.accounts.find(a=>a.id===state.activeAccountId)}
+function load(){try{const s=JSON.parse(localStorage.getItem(KEY));if(s?.accounts?.length){s.activeAccountId||=s.accounts[0].id;s.properties||=[];s.tenants||=[];return s}}catch{} const x=structuredClone(empty);x.activeAccountId=x.accounts[0].id;return x}
+function save(){localStorage.setItem(KEY,JSON.stringify(state));render()}
+function currentAccount(){return state.accounts.find(a=>a.id===state.activeAccountId)}
 function mine(list){return list.filter(x=>x.accountId===state.activeAccountId)}
-function euro(n){return new Intl.NumberFormat("fr-FR",{style:"currency",currency:"EUR",maximumFractionDigits:0}).format(n||0)}
-function esc(v=""){return String(v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function esc(v=''){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function euro(n){return new Intl.NumberFormat('fr-FR',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(Number(n)||0)}
 function render(){
- $("#accountSelect").innerHTML=state.accounts.map(a=>`<option value="${a.id}" ${a.id===state.activeAccountId?"selected":""}>${esc(a.name)}</option>`).join("");
+ $('#accountSelect').innerHTML=state.accounts.map(a=>`<option value="${a.id}" ${a.id===state.activeAccountId?'selected':''}>${esc(a.name)}</option>`).join('');
  const props=mine(state.properties), tenants=mine(state.tenants);
- $("#statProperties").textContent=props.length;
- $("#statUnits").textContent=props.reduce((n,p)=>n+Number(p.units||0),0);
- $("#statTenants").textContent=tenants.length;
- $("#statRent").textContent=euro(tenants.reduce((n,t)=>n+Number(t.rent||0),0));
- $("#propertyList").innerHTML=props.length?props.map(p=>`<article class="item card"><span class="badge">${esc(p.type)}</span><h3>${esc(p.name)}</h3><div class="meta">${esc(p.zip)} ${esc(p.city)}</div><div class="meta">Cadastre : ${esc(p.section||"—")} ${esc(p.parcel||"")}</div><div class="row"><span>${Number(p.area||0).toLocaleString("fr-FR")} m² · ${p.units||0} logement(s)</span><button class="danger" data-delete-property="${p.id}">Supprimer</button></div></article>`).join(""):'<div class="empty card">Ajoutez votre première forêt, parcelle ou habitation.</div>';
- $("#tenantProperty").innerHTML=props.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join("");
- $("#tenantList").innerHTML=tenants.length?tenants.map(t=>{const p=state.properties.find(x=>x.id===t.propertyId);return `<article class="item card"><span class="badge">${esc(t.unit||"Location")}</span><h3>${esc(t.name)}</h3><div class="meta">${esc(p?.name||"Bien supprimé")}</div><div class="meta">${esc(t.phone||"")} ${t.email?"· "+esc(t.email):""}</div><div class="row"><strong>${euro(t.rent)}/mois</strong><button class="danger" data-delete-tenant="${t.id}">Supprimer</button></div></article>`}).join(""):'<div class="empty card">Aucun locataire pour cette société.</div>';
- $("#accountList").innerHTML=state.accounts.map(a=>`<article class="item card"><span class="badge">${a.id===state.activeAccountId?"Compte actif":"Propriétaire"}</span><h3>${esc(a.name)}</h3><div class="meta">SIREN : ${esc(a.siren||"Non renseigné")}</div><div class="row"><span>${state.properties.filter(p=>p.accountId===a.id).length} bien(s)</span>${state.accounts.length>1?`<button class="danger" data-delete-account="${a.id}">Supprimer</button>`:""}</div></article>`).join("");
+ $('#statProperties').textContent=props.length; $('#statUnits').textContent=props.reduce((n,p)=>n+Number(p.units||0),0); $('#statTenants').textContent=tenants.length; $('#statRent').textContent=euro(tenants.reduce((n,t)=>n+Number(t.rent||0),0));
+ $('#propertyList').innerHTML=props.length?props.map(p=>`<article class="item card">${p.photo?`<img class="thumb" src="${p.photo}">`:''}<span class="badge">${esc(p.type)}</span><h3>${esc(p.name)}</h3><div class="meta">Cadastre : ${esc(p.section||'—')} ${esc(p.parcel||'')} · ${Number(p.area||0).toLocaleString('fr-FR')} m²</div><div class="meta">Valeur : ${euro(p.value)} · ${p.units||0} lot(s)</div><div class="meta">${esc(p.notes||'')}</div><div class="row"><button data-show-property="${p.id}">Voir carte</button><button class="danger" data-delete-property="${p.id}">Supprimer</button></div></article>`).join(''):'<div class="empty card">Aucun bien pour cette société.</div>';
+ $('#tenantProperty').innerHTML=props.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('');
+ $('#tenantList').innerHTML=tenants.length?tenants.map(t=>{const p=state.properties.find(x=>x.id===t.propertyId);return `<article class="item card"><span class="badge">${esc(t.unit||'Location')}</span><h3>${esc(t.name)}</h3><div class="meta">${esc(p?.name||'Bien supprimé')}</div><div class="meta">${euro(t.rent)}/mois + ${euro(t.charges)} charges</div><div class="meta">Bail : ${esc(t.leaseStart||'—')} → ${esc(t.leaseEnd||'sans date')}</div><div class="row"><span>${esc(t.phone||'')} ${t.email?'· '+esc(t.email):''}</span><button class="danger" data-delete-tenant="${t.id}">Supprimer</button></div></article>`}).join(''):'<div class="empty card">Aucun locataire.</div>';
+ $('#accountList').innerHTML=state.accounts.map(a=>`<article class="item card"><span class="badge">${a.id===state.activeAccountId?'Compte actif':'Propriétaire'}</span><h3>${esc(a.name)}</h3><div class="meta">SIREN : ${esc(a.siren||'Non renseigné')}</div><div class="row"><span>${state.properties.filter(p=>p.accountId===a.id).length} bien(s)</span>${state.accounts.length>1?`<button class="danger" data-delete-account="${a.id}">Supprimer</button>`:''}</div></article>`).join('');
+ const upcoming=[...props.filter(p=>p.dueDate).map(p=>({date:p.dueDate,label:`${p.name} — entretien/échéance`})),...tenants.filter(t=>t.leaseEnd).map(t=>({date:t.leaseEnd,label:`${t.name} — fin/échéance du bail`}))].sort((a,b)=>a.date.localeCompare(b.date)).slice(0,8);
+ $('#alerts').innerHTML=upcoming.length?upcoming.map(x=>`<div class="alert-row"><strong>${esc(x.date)}</strong><span>${esc(x.label)}</span></div>`).join(''):'Aucune échéance enregistrée.';
 }
-$$(".tab").forEach(b=>b.onclick=()=>{$$(".tab,.view").forEach(x=>x.classList.remove("active"));b.classList.add("active");$("#"+b.dataset.view).classList.add("active")});
-$("#accountSelect").onchange=e=>{state.activeAccountId=e.target.value;save()};
-function open(id){$(id).showModal()}
-$("#addAccountBtn").onclick=$("#addAccountBtn2").onclick=()=>open("#accountDialog");
-$("#addPropertyBtn").onclick=()=>open("#propertyDialog");
-$("#addTenantBtn").onclick=()=>{if(!mine(state.properties).length)return alert("Ajoutez d’abord un bien.");open("#tenantDialog")};
-function formData(form){return Object.fromEntries(new FormData(form))}
-$("#accountForm").addEventListener("submit",e=>{if(e.submitter?.value==="cancel")return;const d=formData(e.target),a={id:crypto.randomUUID(),...d};state.accounts.push(a);state.activeAccountId=a.id;e.target.reset();save()});
-$("#propertyForm").addEventListener("submit",e=>{if(e.submitter?.value==="cancel")return;state.properties.push({id:crypto.randomUUID(),accountId:state.activeAccountId,...formData(e.target)});e.target.reset();save()});
-$("#tenantForm").addEventListener("submit",e=>{if(e.submitter?.value==="cancel")return;state.tenants.push({id:crypto.randomUUID(),accountId:state.activeAccountId,...formData(e.target)});e.target.reset();save()});
-document.addEventListener("click",e=>{
- const p=e.target.dataset.deleteProperty,t=e.target.dataset.deleteTenant,a=e.target.dataset.deleteAccount;
- if(p&&confirm("Supprimer ce bien et ses locataires ?")){state.properties=state.properties.filter(x=>x.id!==p);state.tenants=state.tenants.filter(x=>x.propertyId!==p);save()}
- if(t&&confirm("Supprimer ce locataire ?")){state.tenants=state.tenants.filter(x=>x.id!==t);save()}
- if(a&&confirm("Supprimer cette société et toutes ses données ?")){state.accounts=state.accounts.filter(x=>x.id!==a);state.properties=state.properties.filter(x=>x.accountId!==a);state.tenants=state.tenants.filter(x=>x.accountId!==a);state.activeAccountId=state.accounts[0].id;save()}
-});
-window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();installPrompt=e;$("#installBtn").classList.remove("hidden")});
-$("#installBtn").onclick=async()=>{await installPrompt?.prompt();installPrompt=null;$("#installBtn").classList.add("hidden")};
-if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js");
+function initMap(){if(map)return;map=L.map('map').setView([45.5,4.2],8);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:20,attribution:'© OpenStreetMap'}).addTo(map)}
+async function cadastralSearch(){initMap();const insee=$('#cadInsee').value.trim(),section=$('#cadSection').value.trim().toUpperCase(),numero=$('#cadNumber').value.trim().padStart(4,'0');if(!/^\d{5}$/.test(insee)||!/^[A-Z0-9]{1,2}$/.test(section)||!/^\d{4}$/.test(numero)){return $('#cadStatus').textContent='Référence cadastrale invalide.'}$('#cadStatus').textContent='Recherche IGN en cours…';try{const u=`https://apicarto.ign.fr/api/cadastre/parcelle?code_insee=${encodeURIComponent(insee)}&section=${encodeURIComponent(section)}&numero=${encodeURIComponent(numero)}&source_ign=PCI`;const r=await fetch(u);const d=await r.json();if(!d.features?.length)throw new Error('Parcelle introuvable');currentParcel=d.features[0];if(parcelLayer)parcelLayer.remove();parcelLayer=L.geoJSON(currentParcel,{style:{color:'#165d4a',weight:4,fillOpacity:.25}}).addTo(map);map.fitBounds(parcelLayer.getBounds(),{padding:[24,24]});const p=currentParcel.properties;$('#cadStatus').textContent='Parcelle trouvée.';$('#cadResult').classList.remove('hidden');$('#cadResult').innerHTML=`<div class="section-title"><div><span class="eyebrow">PARCELLE TROUVÉE</span><h2>${esc(p.section)} ${esc(p.numero)}</h2></div><button id="addCadParcel">Ajouter à ${esc(currentAccount().name)}</button></div><div class="meta">Code INSEE : ${esc(p.code_insee)} · Contenance cadastrale : ${Number(p.contenance||0).toLocaleString('fr-FR')} m²</div>`;$('#addCadParcel').onclick=()=>prefillFromCadastre()}catch(e){$('#cadStatus').textContent='Impossible de récupérer cette parcelle.'}}
+function prefillFromCadastre(){const p=currentParcel.properties;const f=$('#propertyForm');f.elements.insee.value=p.code_insee||'';f.elements.section.value=p.section||'';f.elements.parcel.value=p.numero||'';f.elements.area.value=p.contenance||'';f.elements.name.value=`Parcelle ${p.section} ${p.numero}`;f.dataset.geometry=JSON.stringify(currentParcel.geometry);$('#propertyDialog').showModal()}
+async function imageData(file){if(!file)return'';return await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(file)})}
+$$('.tab').forEach(b=>b.onclick=()=>{$$('.tab,.view').forEach(x=>x.classList.remove('active'));b.classList.add('active');$('#'+b.dataset.view).classList.add('active');if(b.dataset.view==='cadastre')setTimeout(()=>{initMap();map.invalidateSize()},50)});
+$('#accountSelect').onchange=e=>{state.activeAccountId=e.target.value;save()};
+$('#addAccountBtn').onclick=$('#addAccountBtn2').onclick=()=>$('#accountDialog').showModal();
+$('#addPropertyBtn').onclick=()=>$('#propertyDialog').showModal();
+$('#addTenantBtn').onclick=()=>{if(!mine(state.properties).length)return alert('Ajoutez d’abord un bien.');$('#tenantDialog').showModal()};
+$('#cadSearchBtn').onclick=cadastralSearch;
+$('#accountForm').addEventListener('submit',e=>{if(e.submitter?.value==='cancel')return;const d=Object.fromEntries(new FormData(e.target));const a={id:crypto.randomUUID(),...d};state.accounts.push(a);state.activeAccountId=a.id;e.target.reset();save()});
+$('#propertyForm').addEventListener('submit',async e=>{if(e.submitter?.value==='cancel')return;const fd=new FormData(e.target),data=Object.fromEntries(fd);delete data.photo;const photo=await imageData($('#propertyPhoto').files[0]);state.properties.push({id:crypto.randomUUID(),accountId:state.activeAccountId,...data,photo,geometry:e.target.dataset.geometry?JSON.parse(e.target.dataset.geometry):null});delete e.target.dataset.geometry;e.target.reset();save()});
+$('#tenantForm').addEventListener('submit',e=>{if(e.submitter?.value==='cancel')return;state.tenants.push({id:crypto.randomUUID(),accountId:state.activeAccountId,...Object.fromEntries(new FormData(e.target))});e.target.reset();save()});
+document.addEventListener('click',e=>{const p=e.target.dataset.deleteProperty,t=e.target.dataset.deleteTenant,a=e.target.dataset.deleteAccount,show=e.target.dataset.showProperty;if(p&&confirm('Supprimer ce bien et ses locataires ?')){state.properties=state.properties.filter(x=>x.id!==p);state.tenants=state.tenants.filter(x=>x.propertyId!==p);save()}if(t&&confirm('Supprimer ce locataire ?')){state.tenants=state.tenants.filter(x=>x.id!==t);save()}if(a&&confirm('Supprimer cette société et toutes ses données ?')){state.accounts=state.accounts.filter(x=>x.id!==a);state.properties=state.properties.filter(x=>x.accountId!==a);state.tenants=state.tenants.filter(x=>x.accountId!==a);state.activeAccountId=state.accounts[0].id;save()}if(show){const p=state.properties.find(x=>x.id===show);if(p?.geometry){$$('.tab,.view').forEach(x=>x.classList.remove('active'));document.querySelector('[data-view="cadastre"]').classList.add('active');$('#cadastre').classList.add('active');setTimeout(()=>{initMap();if(parcelLayer)parcelLayer.remove();parcelLayer=L.geoJSON({type:'Feature',geometry:p.geometry,properties:{}},{style:{color:'#165d4a',weight:4,fillOpacity:.25}}).addTo(map);map.fitBounds(parcelLayer.getBounds(),{padding:[24,24]});map.invalidateSize()},50)}else alert('Ce bien n’a pas de géométrie cadastrale enregistrée.')}});
+$('#exportBtn').onclick=()=>{const b=new Blob([JSON.stringify(state,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='mes-proprietes-v5.json';a.click();URL.revokeObjectURL(a.href)};
+$('#importFile').onchange=e=>{const r=new FileReader();r.onload=()=>{try{const x=JSON.parse(r.result);if(!x.accounts?.length)throw 0;state=x;save()}catch{alert('Sauvegarde invalide')}};r.readAsText(e.target.files[0])};
 render();
