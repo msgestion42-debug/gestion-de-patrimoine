@@ -2,7 +2,7 @@ name: Publier l'application
 
 on:
   push:
-    branches: [main]
+    branches: [v5.3-cloud]
   workflow_dispatch:
 
 permissions:
