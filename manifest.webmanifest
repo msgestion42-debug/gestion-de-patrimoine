@@ -1,0 +1,12 @@
+{
+  "name":"Mon Patrimoine",
+  "short_name":"Patrimoine",
+  "description":"Gestion de propriétés, parcelles, logements et locataires.",
+  "start_url":"./",
+  "display":"standalone",
+  "background_color":"#f5f1e8",
+  "theme_color":"#165d4a",
+  "icons":[
+    {"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}
+  ]
+}
