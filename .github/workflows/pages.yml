@@ -21,8 +21,10 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Télécharger le code
+      - name: Télécharger la dernière V5.3.1
         uses: actions/checkout@v4
+        with:
+          ref: v5.3-cloud
       - name: Configurer GitHub Pages
         uses: actions/configure-pages@v5
         with:
