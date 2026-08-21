@@ -1,9 +1,10 @@
 const CLOUD_DATA_KEY='patrimoine-v5.1';
 const CLOUD_CONFIG_KEY='patrimoine-supabase-config';
+const DEFAULT_SUPABASE_CONFIG={url:'https://srqvtcqntihkdxgpusjg.supabase.co',key:'sb_publishable_7CWSekc8w0DjY45Jbpab2A_D0k4xo8z'};
 let cloudClient=null,cloudUser=null,cloudTimer=null,cloudBusy=false;
 const originalStorageSet=Storage.prototype.setItem;
 Storage.prototype.setItem=function(key,value){originalStorageSet.call(this,key,value);if(this===localStorage&&key===CLOUD_DATA_KEY)window.scheduleCloudSync?.()};
-function cloudConfig(){try{return JSON.parse(localStorage.getItem(CLOUD_CONFIG_KEY)||'{}')}catch{return{}}}
+function cloudConfig(){try{const saved=JSON.parse(localStorage.getItem(CLOUD_CONFIG_KEY)||'{}');return{url:saved.url||DEFAULT_SUPABASE_CONFIG.url,key:saved.key||DEFAULT_SUPABASE_CONFIG.key}}catch{return DEFAULT_SUPABASE_CONFIG}}
 function setCloudStatus(text,online=false){const s=document.querySelector('#cloudStatus'),b=document.querySelector('#cloudBadge');if(s)s.textContent=text;if(b){b.textContent=online?'☁️ Synchronisé':'☁️ Local';b.classList.toggle('cloud-online',online)}}
 function initCloudClient(){const c=cloudConfig();if(!c.url||!c.key||!window.supabase){cloudClient=null;setCloudStatus('Cloud non configuré');return null}try{cloudClient=window.supabase.createClient(c.url,c.key,{auth:{persistSession:true,autoRefreshToken:true}});return cloudClient}catch{cloudClient=null;setCloudStatus('Configuration Supabase invalide');return null}}
 async function currentSession(){if(!cloudClient)return null;const {data}=await cloudClient.auth.getSession();cloudUser=data.session?.user||null;updateCloudUI();return data.session||null}
