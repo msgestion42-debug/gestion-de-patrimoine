@@ -3,6 +3,8 @@ name: Build V5 Android APK
 on:
   push:
     branches: [v5-android]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 jobs:
