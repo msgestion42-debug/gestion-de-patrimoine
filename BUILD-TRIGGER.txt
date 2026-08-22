@@ -1,0 +1,1 @@
+V5.3.1 build: full editing + automatic all-properties map overview triggered on 2026-08-21.

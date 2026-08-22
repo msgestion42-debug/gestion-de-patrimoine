@@ -1,0 +1,46 @@
+name: Build V5.3 Cloud Android and Windows
+
+on:
+  push:
+    branches: [v5.3-cloud]
+  workflow_dispatch:
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: npm install
+      - run: npm run prepare:web
+      - run: npx cap add android
+      - run: npx cap sync android
+      - name: Build APK
+        working-directory: android
+        run: chmod +x gradlew && ./gradlew assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Mes-Proprietes-V5.3-Android-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install
+      - run: npm run windows:build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Mes-Proprietes-V5.3-Windows
+          path: dist/*.exe
+          if-no-files-found: error
